@@ -8,6 +8,9 @@
 // V7 - Salvar e exibir os tempos dos motores
 //      Nova variável => temposAtualizados
 
+// V8 - Exibir a corrente da planta na tela de acionamentos
+//      Nova variável de comando, verificaCorrente
+
 #include <Nextion.h>                //Biblioteca do display LCD
 #include <Wire.h>                   //Biblioteca do I2C
 #include <EEPROM.h>                 //Biblioteca da EEPROM do arduino
@@ -54,6 +57,8 @@
  #define producaoAtualizada       comandos[21]
 
  #define temposAtualizados        comandos[22]
+
+ #define verificarCorrente        comandos[23]
  
  byte comandos[31];
  
@@ -746,12 +751,14 @@ void pushBotAtuadores(void *ptr)
   ACIONAMENTOS.show();
   limpaPaginas();
   pageAcionamentos = HIGH;
+  verificarCorrente = 1;
 }
 void pushBotProducao(void *ptr)
 {
   PRODUCAO.show();
   limpaPaginas();
   pageProducao = HIGH;
+  
   
 }
 void pushBotManut(void *ptr)
@@ -1198,8 +1205,7 @@ void setup() {
     LET_ESPACO.attachPush( pushLetEspaco, &LET_ESPACO);
 
     ultimaAtualizacao = millis();
-  
-
+    verificarCorrente = 0;
 }
 
 void transmitirComandos(){
@@ -1359,6 +1365,11 @@ void lerDados(){
 
    salvaDados();
 
+   if(verificarCorrente == 1){
+    transmitirComandos();
+    LerCorrente();
+   }
+
    ultimaAtualizacao = millis();
   }
 
@@ -1366,6 +1377,28 @@ void lerDados(){
 
   
 }
+
+//----- Ler corrente da esteira ------
+//Função: Ler a corrente de entrada do circuito(fonte de alimentação)
+
+void LerCorrente(){
+
+  Serial.println("Lendo Corrente");
+  
+  double valorMaximo;
+  valorMaximo = ampereBLOW;
+
+  valorMaximo = valorMaximo * 0.004;
+  valorMaximo = valorMaximo / 0.185;
+  valorMaximo = valorMaximo * 0.707;
+  
+  Serial.println(valorMaximo);
+  uint32_t correnteKit = valorMaximo * 1000;
+
+  I_KIT.setValue(correnteKit);
+     
+
+}//FIM LER CORRENTE
 
 //-------------------Atualiza tempo dos motores
 
@@ -1576,6 +1609,10 @@ void limpaPaginas(){
      pageCadastro = LOW,
      pageEmergencia = LOW,
      pagePausa = LOW;
+
+     verificarCorrente = 0;
+     transmitirComandos();
+     
 }
 
 void loop() {
