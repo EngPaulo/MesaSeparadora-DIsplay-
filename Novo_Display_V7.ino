@@ -11,6 +11,8 @@
 // V8 - Exibir a corrente da planta na tela de acionamentos
 //      Nova variável de comando, verificaCorrente
 
+// V9 - Leitura da TAG RFID
+
 #include <Nextion.h>                //Biblioteca do display LCD
 #include <Wire.h>                   //Biblioteca do I2C
 #include <EEPROM.h>                 //Biblioteca da EEPROM do arduino
@@ -83,14 +85,14 @@
  #define tempoPasso                 dados[14]
  #define tempoEsteira               dados[15]
  
- #define aceitaVM                   dados[16]
- #define rejeitaVM                  dados[17]
+ #define rfid1                      dados[16]
+ #define rfid2                      dados[17]
  
- #define aceitaAZ                   dados[18]
- #define rejeitaAZ                  dados[19] 
+ #define rfid3                      dados[18]
+ #define rfid4                      dados[19] 
  
- #define aceitaVD                   dados[20]
- #define rejeitaVD                  dados[21]
+ #define vazio1                     dados[20]
+ #define vazio2                     dados[21]
  
  #define ampereBLOW                 dados[22]
  #define ampereBHIGH                dados[23]
@@ -259,7 +261,7 @@ NexNumber CARD1_2       = NexNumber(2, 40, "n11");
 NexNumber CARD1_3       = NexNumber(2, 41, "n12");
 
 NexNumber CARD2_0       = NexNumber(2, 42, "n13");
-NexNumber CARD2_1       = NexNumber(2, 43, "n14");
+NexNumber CARD2_1       = NexNumber (2, 43, "n14");
 NexNumber CARD2_2       = NexNumber(2, 44, "n15");
 NexNumber CARD2_3       = NexNumber(2, 45, "n16");
 
@@ -352,7 +354,7 @@ NexButton BOT_RET_PG9 = NexButton(9, 5, "b19");            //Botão Retorna
 NexButton BOT_RET_PG10 = NexButton(10, 2, "b19");          //Botão Retorna
 
 //Página CADASTRO
-NexButton BOT_LER_TAG = NexButton(11, 32, "b0");           //Botão Retorna
+NexButton BOT_LER_TAG = NexButton(11, 32, "b0");           //Botão Ler TAG
 
 NexHotspot LET_Q = NexHotspot(11, 4, "m0");                //Letra Q
 NexHotspot LET_W = NexHotspot(11, 5, "m1");                //Letra W
@@ -716,6 +718,31 @@ void pushDecVd3(void *ptr)
 
 void pushBotConfirma(void *ptr)
 {
+
+  //Confirma as quantidades de todas as caixas
+  uint32_t valor;
+  
+  VM1.getValue(&valor);
+  setB1VM = valor;
+  VM2.getValue(&valor);
+  setB2VM = valor;
+  VM3.getValue(&valor);
+  setB3VM = valor;
+
+  AZ1.getValue(&valor);
+  setB1AZ = valor;
+  AZ2.getValue(&valor);
+  setB2AZ = valor;
+  AZ3.getValue(&valor);
+  setB3AZ = valor;
+
+  VD1.getValue(&valor);
+  setB1VD = valor;
+  VD2.getValue(&valor);
+  setB2VD = valor;
+  VD3.getValue(&valor);
+  setB3VD = valor;
+  
   limpaComandos();
   iniciaProcesso = 1;  
   transmitirComandos();
@@ -906,6 +933,10 @@ void atualizaTexto(){
 void pushBotLerTag(void *ptr)
 {
   lerTag = 1;
+  rfid1 = 0;
+  rfid2 = 0;
+  rfid3 = 0;
+  rfid4 = 0;
   transmitirComandos();
   lerTag = 0;
 }
@@ -1045,17 +1076,44 @@ void pushLetM(void *ptr)
 
 void pushLetEnter(void *ptr)
 {
- 
+
+ limpaPaginas();
  PERSONALIZADO.show();
- if(setCliente1) CLI_01.setText(nomeCliente); 
- if(setCliente2) CLI_02.setText(nomeCliente);
- if(setCliente3) CLI_03.setText(nomeCliente);
+ if(setCliente1) {
+  CLI_01.setText(nomeCliente);
+  CARD1_0.setValue(rfid1);
+  CARD1_1.setValue(rfid2);
+  CARD1_2.setValue(rfid3);
+  CARD1_3.setValue(rfid4);
+  
+ }
+ 
+ if(setCliente2) {
+  CLI_02.setText(nomeCliente);
+  CARD2_0.setValue(rfid1);
+  CARD2_1.setValue(rfid2);
+  CARD2_2.setValue(rfid3);
+  CARD2_3.setValue(rfid4);
+ }
+ if(setCliente3) {
+  CLI_03.setText(nomeCliente);
+  CARD3_0.setValue(rfid1);
+  CARD3_1.setValue(rfid2);
+  CARD3_2.setValue(rfid3);
+  CARD3_3.setValue(rfid4);
+ }
+
+ rfid1 = 0;
+ rfid2 = 0;
+ rfid3 = 0;
+ rfid4 = 0;
 
  setCliente1 = LOW;
  setCliente2 = LOW;
  setCliente3 = LOW;
 
  auxDigTexto = 0;
+ Serial.println("teste");
 }
 void pushLetEspaco(void *ptr)
 {
@@ -1368,6 +1426,15 @@ void lerDados(){
    if(verificarCorrente == 1){
     transmitirComandos();
     LerCorrente();
+   }
+
+   if(pageCadastro){
+
+    ID0.setValue(rfid1);
+    ID1.setValue(rfid2);
+    ID2.setValue(rfid3);
+    ID3.setValue(rfid4);
+  
    }
 
    ultimaAtualizacao = millis();
