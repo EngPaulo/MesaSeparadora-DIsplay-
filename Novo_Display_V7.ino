@@ -13,6 +13,8 @@
 
 // V9 - Leitura da TAG RFID
 
+// V10 - Adicionar botão de início (modo 3.0)
+
 #include <Nextion.h>                //Biblioteca do display LCD
 #include <Wire.h>                   //Biblioteca do I2C
 #include <EEPROM.h>                 //Biblioteca da EEPROM do arduino
@@ -61,6 +63,8 @@
  #define temposAtualizados        comandos[22]
 
  #define verificarCorrente        comandos[23]
+
+ #define modo40                   comandos[24]
  
  byte comandos[31];
  
@@ -275,10 +279,12 @@ NexNumber CARD3_3       = NexNumber(2, 49, "n20");
 //Página ABERTURA
 NexPicture IMG_LOGO = NexPicture(0, 3, "p2");                     //Logo da indústria 4.0
 
+
 //Página HOME
 NexButton BOT_PADRAO = NexButton(1, 4, "b2");               //Botão "Prod. Padrão"
 NexButton BOT_PERSONALIZAR = NexButton(1, 2, "b0");         //Botão "Personalização"
 NexButton BOT_MANUT_INFO = NexButton(1, 3, "b1");           //Botão "Manut./ Info."
+NexButton BOT_RET_HOME = NexButton(1, 6, "b19");            //Botão Retorno para abertura
 
 //Página Personalização
 NexText CLIENTE_1 = NexText(2, 34, "t0");                   //Texto "Cliente 1"
@@ -399,6 +405,7 @@ char buffer[10] = {0};
 NexTouch *nex_Listen_List[] = 
 {
     &IMG_LOGO,
+    &BOT_RET_HOME,
     
     &BOT_PADRAO,
     &BOT_PERSONALIZAR,
@@ -511,7 +518,10 @@ NexTouch *nex_Listen_List[] =
 //----------------------------Tela de abertura-------------------------------------------
 void pushImgLogo(void *ptr)
 {
-  HOME.show();  
+  HOME.show();
+  modo40 = 1;  
+  transmitirComandos();
+  
   limpaPaginas();   
   pageHome = HIGH;                                         
 }
@@ -536,6 +546,17 @@ void pushBotManutInfo(void *ptr)
   MANUT.show();
   limpaPaginas();
   pageManut = HIGH;
+}
+
+void pushBotRetHome(void *ptr)
+{
+  ABERTURA.show();
+  modo40 = 0;  
+  transmitirComandos();
+  
+  limpaPaginas();   
+  pageAbertura = HIGH;     
+  
 }
 
 //---------------------------Tela Personalizado-------------------------------------------
@@ -1162,6 +1183,7 @@ void setup() {
     BOT_PADRAO.attachPop(pushBotPadrao, &BOT_PADRAO);
     BOT_PERSONALIZAR.attachPop(pushBotPersonalizar, &BOT_PERSONALIZAR);
     BOT_MANUT_INFO.attachPop(pushBotManutInfo, &BOT_MANUT_INFO);
+    BOT_RET_HOME.attachPop(pushBotRetHome, &BOT_RET_HOME);
 
     CLIENTE_1.attachPop(pushCliente1, &CLIENTE_1);
     CLIENTE_2.attachPop(pushCliente2, &CLIENTE_2);
